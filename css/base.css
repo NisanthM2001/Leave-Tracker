@@ -1,0 +1,230 @@
+/* ===================================================
+   1. Base, Variables, Login Screen & App Shell
+   =================================================== */
+
+:root {
+  --color-navy: #1F3864;
+  --color-navy-dark: #12213D;
+  --color-navy-light: #2A4C85;
+  --color-blue: #4472C4;
+  --color-blue-dark: #2F5597;
+  --color-blue-light: #EEF4FD;
+  --color-teal: #0E7C7B;
+  --color-teal-dark: #095958;
+  --color-teal-light: #E8F7F7;
+  --color-gold: #BF8F00;
+  --color-gold-light: #FEF9E7;
+  --color-gold-dark: #926C00;
+
+  /* Leave Highlight Tints */
+  --leave-red-bg: #FDF2F2;
+  --leave-red-text: #991B1B;
+  --leave-red-border: #FCA5A5;
+  
+  --leave-green-bg: #F0FDF4;
+  --leave-green-text: #166534;
+  --leave-green-border: #86EFAC;
+
+  --leave-yellow-bg: #FEFCE8;
+  --leave-yellow-text: #854D0E;
+  --leave-yellow-border: #FDE047;
+
+  --leave-blue-bg: #EFF6FF;
+  --leave-blue-text: #1E40AF;
+  --leave-blue-border: #93C5FD;
+
+  --leave-purple-bg: #FAF5FF;
+  --leave-purple-text: #6B21A8;
+  --leave-purple-border: #D8B4FE;
+
+  --leave-orange-bg: #FFF7ED;
+  --leave-orange-text: #9A3412;
+  --leave-orange-border: #FDBA74;
+
+  --leave-teal-bg: #F0FDFA;
+  --leave-teal-text: #115E59;
+  --leave-teal-border: #5EEAD4;
+
+  /* Weekend Highlight */
+  --weekend-bg: #FEE2E2;
+  --weekend-text: #B91C1C;
+
+  /* Surface & Base */
+  --bg-page: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #F1F5F9;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+  --border-color: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  /* Typography & Effects */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 40px rgba(18, 33, 61, 0.22);
+  --transition-fast: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+/* Login Screen */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 80% 20%, #2A4C85 0%, #1F3864 50%, #12213D 100%);
+  padding: 24px;
+  position: relative;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 42px 38px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: cardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-brand { text-align: center; margin-bottom: 28px; }
+.login-icon-badge {
+  font-size: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  background: linear-gradient(135deg, #EEF4FD 0%, #DCE8FA 100%);
+  border-radius: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(68, 114, 196, 0.2);
+  border: 1px solid rgba(68, 114, 196, 0.25);
+}
+.login-brand h2 { font-size: 1.55rem; font-weight: 800; color: var(--color-navy); margin-bottom: 6px; }
+.login-brand p { color: var(--text-muted); font-size: 0.9rem; }
+
+.login-error-box {
+  background-color: var(--leave-red-bg);
+  border: 1px solid var(--leave-red-border);
+  color: var(--leave-red-text);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block; font-size: 0.825rem; font-weight: 700; color: var(--color-navy);
+  margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.input-wrapper { position: relative; display: flex; align-items: center; }
+.input-wrapper input {
+  width: 100%; padding: 13px 16px 13px 44px; font-size: 0.95rem; font-family: inherit;
+  border: 1.5px solid var(--border-color); border-radius: var(--radius-md);
+  background-color: #FFFFFF; color: var(--text-main); transition: all var(--transition-fast);
+}
+.input-wrapper input:focus { outline: none; border-color: var(--color-blue); box-shadow: 0 0 0 3.5px rgba(68, 114, 196, 0.2); }
+.input-icon { position: absolute; left: 14px; font-size: 17px; pointer-events: none; color: var(--text-muted); }
+.toggle-password-btn {
+  position: absolute; right: 12px; background: none; border: none; cursor: pointer;
+  padding: 6px; font-size: 16px; opacity: 0.7;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; font-size: 0.9rem; font-weight: 600; font-family: inherit;
+  border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
+  transition: all var(--transition-fast); white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-navy) 0%, #162B4D 100%);
+  color: #FFFFFF; border-color: var(--color-navy); box-shadow: 0 4px 12px rgba(31, 56, 100, 0.25);
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%); transform: translateY(-1px); }
+.btn-accent {
+  background: linear-gradient(135deg, var(--color-teal) 0%, #0A6362 100%);
+  color: #FFFFFF; border-color: var(--color-teal);
+}
+.btn-block { width: 100%; padding: 14px 22px; font-size: 1.025rem; font-weight: 700; margin-top: 10px; }
+.login-footer-hint { text-align: center; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); }
+
+/* App Navigation */
+.app-container { min-height: 100vh; display: flex; flex-direction: column; }
+.top-nav {
+  background-color: var(--color-navy); color: #FFFFFF; padding: 12px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 100;
+}
+.nav-brand { display: flex; align-items: center; gap: 14px; }
+.nav-logo { font-size: 26px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.12); width: 46px; height: 46px; border-radius: var(--radius-md); }
+.nav-titles { display: flex; flex-direction: column; }
+.nav-title { font-size: 1.25rem; font-weight: 800; color: #FFFFFF; }
+.nav-badge { font-size: 0.75rem; color: #BDD0F0; font-weight: 500; }
+.nav-actions { display: flex; align-items: center; gap: 16px; }
+.user-profile-badge { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; color: #FFFFFF; }
+.avatar-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #34D399; box-shadow: 0 0 10px #34D399; }
+.btn-logout { background: rgba(255, 255, 255, 0.1); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.18); padding: 7px 16px; font-size: 0.85rem; border-radius: var(--radius-md); }
+.btn-logout:hover { background-color: #DC2626; color: #FFFFFF; }
+
+/* Spreadsheet Tabs */
+.sheet-tabs-bar {
+  background-color: #152542; padding: 0 32px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 2px solid var(--color-blue);
+}
+.sheet-tabs-container { display: flex; gap: 6px; align-items: flex-end; }
+.sheet-tab {
+  background-color: rgba(255, 255, 255, 0.07); color: #CBD5E1; border: none;
+  padding: 11px 22px; font-family: inherit; font-size: 0.925rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border-top-left-radius: 10px; border-top-right-radius: 10px; position: relative; bottom: -2px;
+}
+.sheet-tab:hover { background-color: rgba(255, 255, 255, 0.14); color: #FFFFFF; }
+.sheet-tab.active {
+  background-color: var(--bg-page); color: var(--color-navy); font-weight: 700;
+  border-top: 3px solid var(--color-blue); border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color); border-bottom: 2px solid var(--bg-page);
+}
+.tab-badge { background-color: var(--color-blue); color: #FFFFFF; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+.sheet-tab.active .tab-badge { background-color: var(--color-navy); }
+.quick-stats-pill { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #CBD5E1; background: rgba(255, 255, 255, 0.08); padding: 5px 14px; border-radius: 20px; }
+.pill-dot { width: 7px; height: 7px; border-radius: 50%; background-color: #38BDF8; box-shadow: 0 0 8px #38BDF8; }
+.main-content { flex: 1; padding: 26px 32px; max-width: 1480px; width: 100%; margin: 0 auto; }
+.tab-content { display: block; animation: tabFadeIn 0.25s ease-out; }
+@keyframes tabFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

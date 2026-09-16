@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Leave Tracker</title>
+  <meta name="description" content="Personal Leave Tracker web app with dynamic annual tracking, automated day calculation, and responsive analytics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="login-container" class="login-container">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-icon-badge">📅</div>
+        <h2>Personal Leave Tracker</h2>
+        <p>Private & secure attendance & leave workstation</p>
+      </div>
+
+      <div id="login-error" class="login-error-box hidden" role="alert">
+        <span class="error-icon">⚠️</span>
+        <span id="login-error-text">Invalid username or password</span>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" id="login-username" placeholder="Enter username" autocomplete="username" required value="Nisanth">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" required>
+            <button type="button" id="toggle-password-btn" class="toggle-password-btn" aria-label="Toggle password visibility" title="Show/Hide Password">
+              <span id="eye-icon">👁️</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block">
+          <span>Sign In to Tracker</span>
+          <span class="arrow-icon">→</span>
+        </button>
+      </form>
+
+      <div class="login-footer-hint">
+        <span>🔒 Personal single-user workstation tool</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN APP SHELL -->
+  <div id="app-container" class="app-container hidden">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="nav-logo">📅</div>
+        <div class="nav-titles">
+          <h1 class="nav-title">Personal Leave Tracker</h1>
+          <span class="nav-badge">Dynamic Annual Tracking</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <div class="user-profile-badge">
+          <span class="avatar-dot"></span>
+          <span class="user-name" id="display-username">Nisanth</span>
+        </div>
+        <button id="btn-logout" class="btn btn-logout" title="Log out of Leave Tracker">
+          <span class="logout-icon">🚪</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Spreadsheet Sheet Tab Bar -->
+    <div class="sheet-tabs-bar">
+      <div class="sheet-tabs-container" role="tablist">
+        <button id="tab-btn-tracker" class="sheet-tab active" role="tab" aria-selected="true" aria-controls="view-tracker">
+          <span class="tab-icon">📋</span>
+          <span class="tab-label">Leave Tracker</span>
+          <span class="tab-badge" id="tracker-entry-count">16</span>
+        </button>
+        <button id="tab-btn-dashboard" class="sheet-tab" role="tab" aria-selected="false" aria-controls="view-dashboard">
+          <span class="tab-icon">📈</span>
+          <span class="tab-label">Dashboard</span>
+        </button>
+      </div>
+      <div class="quick-stats-pill" id="quick-stats-pill">
+        <span class="pill-dot"></span>
+        <span id="quick-stats-text">16 Total Records</span>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- TAB 1: LEAVE TRACKER -->
+      <section id="view-tracker" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-tracker">
+        <!-- Excel-like AutoFilter / Search Toolbar -->
+        <div class="tracker-toolbar card">
+          <div class="toolbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="filter-search-reason" placeholder="Search leaves by reason, day, date..." aria-label="Search reason text">
+          </div>
+
+          <div class="toolbar-filters">
+            <div class="filter-item">
+              <label for="filter-leave-type">Type:</label>
+              <select id="filter-leave-type" aria-label="Filter by Leave Type"><option value="ALL">All Types</option></select>
+            </div>
+
+            <div class="filter-item">
+              <label for="filter-month">Month:</label>
+              <select id="filter-month" aria-label="Filter by Month">
+                <option value="ALL">All Months</option>
+                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+                <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+                <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label for="filter-year-section">Year:</label>
+              <select id="filter-year-section" aria-label="Jump to or Filter by Year"><option value="ALL">All Years</option></select>
+            </div>
+
+            <button id="btn-reset-filters" class="btn btn-secondary btn-sm" title="Clear all search filters">Reset</button>
+          </div>
+
+          <div class="toolbar-actions">
+            <button id="btn-add-next-year-top" class="btn btn-accent btn-sm" title="Start next dynamic year"><span>➕ Start Next Year</span></button>
+            <button id="btn-expand-all" class="btn btn-ghost btn-sm" title="Expand all year tables">Expand All</button>
+            <button id="btn-collapse-all" class="btn btn-ghost btn-sm" title="Collapse all year tables">Collapse All</button>
+          </div>
+        </div>
+
+        <!-- Year Sections Container -->
+        <div id="years-container" class="years-container"></div>
+      </section>
+
+      <!-- TAB 2: DASHBOARD -->
+      <section id="view-dashboard" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-dashboard">
+        <!-- Dashboard Year Filter Bar -->
+        <div class="dashboard-header card">
+          <div class="dashboard-title-group">
+            <span class="section-icon">📈</span>
+            <div>
+              <h2 class="section-title">Leave & Attendance Analytics</h2>
+              <p class="section-subtitle">Real-time breakdown of leaves, remote working days, and sickness tracking</p>
+            </div>
+          </div>
+          <div class="dashboard-filter-group">
+            <label for="dashboard-year-select" class="filter-label">Filter Year:</label>
+            <select id="dashboard-year-select" class="dashboard-select"><option value="ALL">All Years</option></select>
+          </div>
+        </div>
+
+        <!-- Dashboard Analytics Grid -->
+        <div class="dashboard-grid">
+          <div class="card dashboard-card">
+            <div class="card-header header-blue">
+              <div class="card-title"><span>📋</span><h3>Leave Type Summary</h3></div>
+              <span class="card-tag" id="summary-scope-badge">All Years</span>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table summary-table" id="summary-table">
+                  <thead>
+                    <tr><th>Leave Type</th><th>Category</th><th class="text-right">Total Days</th><th class="text-right">Proportion</th></tr>
+                  </thead>
+                  <tbody id="summary-table-body"></tbody>
+                  <tfoot>
+                    <tr class="total-row">
+                      <td colspan="2"><strong>TOTAL ACCUMULATED</strong></td>
+                      <td class="text-right"><strong id="summary-total-count">0</strong></td>
+                      <td class="text-right"><strong>100%</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Tiles -->
+          <div class="metrics-cards-column">
+            <div class="metric-card card">
+              <div class="metric-icon metric-leave">🏖️</div>
+              <div class="metric-content"><span class="metric-label">Regular Leaves</span><span class="metric-value" id="metric-leave-count">0</span></div>
+            </div>
+            <div class="metric-card card">
+              <div class="metric-icon metric-wfh">💻</div>
+              <div class="metric-content"><span class="metric-label">Work From Home</span><span class="metric-value" id="metric-wfh-count">0</span></div>
+            </div>
+            <div class="metric-card card">
+              <div class="metric-icon metric-sick">🤒</div>
+              <div class="metric-content"><span class="metric-label">Sick Leaves</span><span class="metric-value" id="metric-sick-count">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month-wise Breakdown Card -->
+        <div class="card dashboard-card mt-4">
+          <div class="card-header header-teal">
+            <div class="card-title"><span>📆</span><h3>Month-wise Breakdown</h3></div>
+            <span class="card-tag" id="breakdown-year-tag">Jan - Dec Breakdown</span>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table matrix-table" id="month-breakdown-table">
+                <thead id="month-breakdown-thead"></thead>
+                <tbody id="month-breakdown-tbody"></tbody>
+                <tfoot id="month-breakdown-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Card (Gold Accent) -->
+        <div class="card dashboard-card settings-card mt-4">
+          <div class="card-header header-gold">
+            <div class="card-title"><span>⚙️</span><h3>Settings & Configuration</h3></div>
+            <span class="card-tag gold-tag">Customizable Types & Years</span>
+          </div>
+          <div class="card-body">
+            <p class="settings-intro">Customize leave types and supported years. Changes update immediately across all sheets.</p>
+            <div class="settings-grid">
+              <!-- Leave Types Manager -->
+              <div class="settings-box">
+                <div class="settings-box-header"><h4>🎨 Leave Types</h4><span class="settings-badge" id="leave-types-count">3 types</span></div>
+                <div class="settings-list-wrapper"><ul class="settings-list" id="settings-leave-types-list"></ul></div>
+                <form id="form-add-leave-type" class="settings-add-form">
+                  <input type="text" id="input-new-leave-type" placeholder="New leave type name..." required maxlength="30">
+                  <select id="select-new-leave-color" title="Highlight Color Style">
+                    <option value="red">Light Red (Leave)</option>
+                    <option value="green">Light Green (Remote)</option>
+                    <option value="yellow">Light Yellow (Sick)</option>
+                    <option value="blue">Light Blue</option>
+                    <option value="purple">Light Purple</option>
+                    <option value="orange">Light Orange</option>
+                    <option value="teal">Light Teal</option>
+                  </select>
+                  <button type="submit" class="btn btn-secondary btn-sm">+ Add Type</button>
+                </form>
+              </div>
+
+              <!-- Years Manager -->
+              <div class="settings-box">
+                <div class="settings-box-header"><h4>📅 Active Tracking Years</h4><span class="settings-badge" id="years-count">1 year</span></div>
+                <div class="settings-list-wrapper"><div class="years-chip-grid" id="settings-years-list"></div></div>
+                <form id="form-add-year" class="settings-add-form">
+                  <input type="number" id="input-new-year" placeholder="e.g. 2027" min="2000" max="2150" required>
+                  <button type="submit" class="btn btn-secondary btn-sm">+ Add Year</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Data Utilities -->
+            <div class="settings-utilities mt-4">
+              <div class="utility-actions">
+                <button type="button" id="btn-export-data" class="btn btn-ghost btn-sm" title="Export entries to Excel (CSV) or JSON">💾 Export Data (Excel / JSON)</button>
+                <label for="file-import-data" class="btn btn-ghost btn-sm" title="Import entries from Excel (CSV) or JSON" style="cursor: pointer; margin: 0;">
+                  📥 Import Data (Excel / JSON)
+                  <input type="file" id="file-import-data" accept=".json,.csv" style="display: none;">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
