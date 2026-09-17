@@ -1,53 +1,153 @@
 /**
- * Authentication Gate (Client-Side)
+ * Authentication Gate & Session Management (Neon PostgreSQL Connected)
  * Personal Leave Tracker
- * 
- * Note: Suitable for personal single-user workstation use.
  */
 
-import { USER_CONFIG, STORAGE_KEYS } from '../config.js';
+import { STORAGE_KEYS } from '../config.js';
 import { showToast } from './state.js';
 
-export function checkAuth(onSuccessCallback) {
-  const isAuth = sessionStorage.getItem(STORAGE_KEYS.SESSION_AUTH) === 'true';
-  const loginContainer = document.getElementById('login-container');
-  const appContainer = document.getElementById('app-container');
+export function getAuthToken() {
+  return sessionStorage.getItem(STORAGE_KEYS.SESSION_TOKEN);
+}
 
-  if (isAuth) {
-    loginContainer.classList.add('hidden');
-    appContainer.classList.remove('hidden');
-    const userDisplay = document.getElementById('display-username');
-    if (userDisplay) userDisplay.textContent = USER_CONFIG.displayName || USER_CONFIG.username;
-    if (onSuccessCallback) onSuccessCallback();
-  } else {
-    loginContainer.classList.remove('hidden');
-    appContainer.classList.add('hidden');
+export function getCurrentUser() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
   }
 }
 
-export function handleLoginSubmit(e, onSuccessCallback) {
+export function authFetch(url, options = {}) {
+  const token = getAuthToken();
+  const headers = options.headers ? { ...options.headers } : {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return fetch(url, { ...options, headers });
+}
+
+export async function checkAuth(onSuccessCallback) {
+  const token = getAuthToken();
+  const loginContainer = document.getElementById('login-container');
+  const appContainer = document.getElementById('app-container');
+  const usersTab = document.getElementById('tab-btn-users');
+
+  if (!token) {
+    if (loginContainer) loginContainer.classList.remove('hidden');
+    if (appContainer) appContainer.classList.add('hidden');
+    return;
+  }
+
+  try {
+    const res = await authFetch('/api/auth/me');
+    if (!res.ok) {
+      throw new Error('Session expired');
+    }
+    const data = await res.json();
+    const user = data.user;
+    sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+
+    if (loginContainer) loginContainer.classList.add('hidden');
+    if (appContainer) appContainer.classList.remove('hidden');
+
+    const userDisplay = document.getElementById('display-username');
+    if (userDisplay) {
+      userDisplay.textContent = user.displayName || user.username;
+    }
+
+    // Toggle Admin "User Management" tab visibility - ONLY for Nisanth / Admin
+    if (usersTab) {
+      if (user.isAdmin) {
+        usersTab.classList.remove('hidden');
+      } else {
+        usersTab.classList.add('hidden');
+        // If non-admin had the user tab active, fallback to tracker
+        const viewUsers = document.getElementById('view-users');
+        if (viewUsers && !viewUsers.classList.contains('hidden')) {
+          const trackerTab = document.getElementById('tab-btn-tracker');
+          if (trackerTab) trackerTab.click();
+        }
+      }
+    }
+
+    if (onSuccessCallback) onSuccessCallback(user);
+  } catch (err) {
+    console.warn('Auth verification failed:', err);
+    sessionStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    if (loginContainer) loginContainer.classList.remove('hidden');
+    if (appContainer) appContainer.classList.add('hidden');
+  }
+}
+
+export async function handleLoginSubmit(e, onSuccessCallback) {
   e.preventDefault();
   const usernameInput = document.getElementById('login-username');
   const passwordInput = document.getElementById('login-password');
   const errorBox = document.getElementById('login-error');
+  const errorText = document.getElementById('login-error-text');
+  const submitBtn = document.getElementById('btn-login-submit');
 
-  const enteredUser = usernameInput.value.trim();
-  const enteredPass = passwordInput.value;
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
 
-  if (enteredUser === USER_CONFIG.username && enteredPass === USER_CONFIG.password) {
-    errorBox.classList.add('hidden');
-    sessionStorage.setItem(STORAGE_KEYS.SESSION_AUTH, 'true');
-    showToast(`Welcome back, ${USER_CONFIG.displayName || USER_CONFIG.username}! 👋`, 'success');
-    checkAuth(onSuccessCallback);
-  } else {
-    errorBox.classList.remove('hidden');
-    document.getElementById('login-error-text').textContent = 'Invalid username or password';
-    passwordInput.focus();
+  if (!username || !password) {
+    if (errorBox) errorBox.classList.remove('hidden');
+    if (errorText) errorText.textContent = 'Please enter both username and password';
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>Signing In...</span><span class="spinner-small">⏳</span>';
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      if (errorBox) errorBox.classList.add('hidden');
+      sessionStorage.setItem(STORAGE_KEYS.SESSION_TOKEN, data.token);
+      sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(data.user));
+
+      showToast(`Welcome back, ${data.user.displayName || data.user.username}! 👋`, 'success');
+      passwordInput.value = '';
+
+      await checkAuth(onSuccessCallback);
+    } else {
+      if (errorBox) errorBox.classList.remove('hidden');
+      if (errorText) errorText.textContent = data.error || 'Invalid username or password';
+      passwordInput.focus();
+    }
+  } catch (err) {
+    if (errorBox) errorBox.classList.remove('hidden');
+    if (errorText) errorText.textContent = 'Network or server connection error. Please try again.';
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Sign In to Tracker</span><span class="arrow-icon">→</span>';
+    }
   }
 }
 
-export function handleLogout() {
+export async function handleLogout() {
+  try {
+    await authFetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) {
+    // Ignore network error on logout
+  }
+  sessionStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   sessionStorage.removeItem(STORAGE_KEYS.SESSION_AUTH);
+
   showToast('Logged out successfully.', 'info');
   const passInput = document.getElementById('login-password');
   if (passInput) passInput.value = '';

@@ -4,7 +4,8 @@
  */
 
 import { state, showToast, saveSettingsToStorage, saveEntriesToStorage, normalizeData, getDayName, generateId } from './state.js';
-import { CSV_COLUMNS, USER_CONFIG } from '../config.js';
+import { CSV_COLUMNS } from '../config.js';
+import { getCurrentUser } from './auth.js';
 import { renderLeaveTracker } from './tracker.js';
 import { renderSettings } from './settings.js';
 
@@ -46,12 +47,13 @@ function exportAsExcelCSV() {
 }
 
 function exportFullBackupJSON() {
+  const currentUser = getCurrentUser() || {};
   const exportObj = {
     app: 'Personal Leave Tracker',
     exportDate: new Date().toISOString(),
     userProfile: {
-      username: USER_CONFIG.username,
-      displayName: USER_CONFIG.displayName
+      username: currentUser.username || 'User',
+      displayName: currentUser.displayName || 'User'
     },
     settings: state.settings,
     entries: state.entries

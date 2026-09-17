@@ -31,7 +31,7 @@
           <label for="login-username">Username</label>
           <div class="input-wrapper">
             <span class="input-icon">👤</span>
-            <input type="text" id="login-username" placeholder="Enter username" autocomplete="username" required value="Nisanth">
+            <input type="text" id="login-username" placeholder="Enter username" autocomplete="username" required>
           </div>
         </div>
 
@@ -94,10 +94,21 @@
           <span class="tab-icon">📈</span>
           <span class="tab-label">Dashboard</span>
         </button>
+        <button id="tab-btn-users" class="sheet-tab hidden" role="tab" aria-selected="false" aria-controls="view-users">
+          <span class="tab-icon">👥</span>
+          <span class="tab-label">User Management</span>
+          <span class="tab-badge tab-badge-admin">Admin</span>
+        </button>
       </div>
-      <div class="quick-stats-pill" id="quick-stats-pill">
-        <span class="pill-dot"></span>
-        <span id="quick-stats-text">16 Total Records</span>
+      <div class="sheet-tabs-meta">
+        <div class="db-status-pill" id="db-status-pill" title="Checking database status...">
+          <span class="db-dot"></span>
+          <span>Neon DB</span>
+        </div>
+        <div class="quick-stats-pill" id="quick-stats-pill">
+          <span class="pill-dot"></span>
+          <span id="quick-stats-text">16 Total Records</span>
+        </div>
       </div>
     </div>
 
@@ -278,6 +289,157 @@
           </div>
         </div>
 
+      </section>
+      
+      <!-- TAB 3: USER MANAGEMENT (EXCLUSIVE TO NISANTH / ADMIN) -->
+      <section id="view-users" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-users">
+        <!-- User Management Header -->
+        <div class="users-header card">
+          <div class="users-title-group">
+            <span class="section-icon">👥</span>
+            <div>
+              <div class="section-title-row">
+                <h2 class="section-title">User & Access Management</h2>
+                <span class="badge-admin-exclusive">🔒 Nisanth Admin Exclusive</span>
+              </div>
+              <p class="section-subtitle">Provision login credentials for other users. Each user has their own private leave workspace stored in Neon PostgreSQL.</p>
+            </div>
+          </div>
+          <div class="users-header-actions">
+            <button type="button" id="btn-refresh-users" class="btn btn-secondary btn-sm" title="Refresh user list from database">
+              <span>🔄 Refresh List</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Two Column Layout: Create User Form + Users Table -->
+        <div class="users-layout-grid">
+          
+          <!-- Column 1: Create New User Form -->
+          <div class="card user-form-card">
+            <div class="card-header header-purple">
+              <div class="card-title">
+                <span>➕</span>
+                <h3>Create New User</h3>
+              </div>
+              <span class="card-tag purple-tag">Access Provisioning</span>
+            </div>
+            <div class="card-body">
+              <form id="form-create-user" class="create-user-form" autocomplete="off">
+                <div class="form-group">
+                  <label for="new-user-username">Username <span class="required-star">*</span></label>
+                  <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="new-user-username" placeholder="e.g. john_doe" required minlength="2" maxlength="50" autocomplete="off">
+                  </div>
+                  <span class="input-hint">Unique handle used to sign in</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="new-user-displayname">Full / Display Name</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon">🏷️</span>
+                    <input type="text" id="new-user-displayname" placeholder="e.g. John Doe" maxlength="60" autocomplete="off">
+                  </div>
+                  <span class="input-hint">Name displayed in the top bar</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="new-user-password">Password <span class="required-star">*</span></label>
+                  <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="new-user-password" placeholder="Create a secure password" required minlength="3" autocomplete="new-password">
+                    <button type="button" id="toggle-new-password-btn" class="toggle-password-btn" title="Toggle password visibility">
+                      <span id="new-user-eye">👁️</span>
+                    </button>
+                  </div>
+                  <span class="input-hint">Minimum 3 characters</span>
+                </div>
+
+                <div class="form-group form-check-group">
+                  <label class="checkbox-label" for="new-user-is-admin">
+                    <input type="checkbox" id="new-user-is-admin">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">
+                      <strong>Grant Administrator Access</strong>
+                      <small>Allows this user to access the User Management tab</small>
+                    </span>
+                  </label>
+                </div>
+
+                <button type="submit" id="btn-create-user-submit" class="btn btn-primary btn-block">
+                  <span>➕ Create User Account</span>
+                </button>
+              </form>
+
+              <div class="admin-notice-box mt-4">
+                <div class="notice-icon">🛡️</div>
+                <div class="notice-text">
+                  <strong>Database Isolation Guaranteed</strong>
+                  <p>When new users sign in, they will only see their own leave entries and customizable years. All records are safely preserved in Neon PostgreSQL.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Registered Accounts Table -->
+          <div class="card users-list-card">
+            <div class="card-header header-blue">
+              <div class="card-title">
+                <span>📋</span>
+                <h3>Registered Accounts</h3>
+              </div>
+              <span class="card-tag" id="users-total-count">Loading...</span>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table users-table" id="users-table">
+                  <thead>
+                    <tr>
+                      <th>User Account</th>
+                      <th>Role</th>
+                      <th class="text-center">Recorded Leaves</th>
+                      <th>Created Date</th>
+                      <th class="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body"></tbody>
+                </table>
+              </div>
+
+              <!-- Database Connection Spec Box -->
+              <div class="db-details-box mt-4">
+                <div class="db-details-header">
+                  <span class="db-icon">🐘</span>
+                  <div>
+                    <h4>Neon Serverless PostgreSQL Database</h4>
+                    <span class="db-badge-connected">● Connected & Pooling Active</span>
+                  </div>
+                </div>
+                <div class="db-details-grid">
+                  <div class="db-info-item">
+                    <span class="db-info-label">Host</span>
+                    <span class="db-info-value" id="db-info-host">ep-rough-pond-b4ga7ctf-pooler...</span>
+                  </div>
+                  <div class="db-info-item">
+                    <span class="db-info-label">Database</span>
+                    <span class="db-info-value">neondb (US East 2)</span>
+                  </div>
+                  <div class="db-info-item">
+                    <span class="db-info-label">Latency</span>
+                    <span class="db-info-value" id="db-info-latency">Calculating...</span>
+                  </div>
+                  <div class="db-info-item">
+                    <span class="db-info-label">Last Ping</span>
+                    <span class="db-info-value" id="db-info-time">Live</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
       </section>
     </main>
   </div>

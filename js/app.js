@@ -1,49 +1,69 @@
 /**
- * Main Application Bootstrap
+ * Main Application Bootstrap (Neon PostgreSQL Connected)
  * Personal Leave Tracker
  */
 
 import { loadFromStorage, updateGlobalBadges } from './state.js';
-import { setupAuthEvents, checkAuth } from './auth.js';
+import { setupAuthEvents, checkAuth, getCurrentUser } from './auth.js';
 import { initYearCollapseState, renderLeaveTracker, setupTrackerToolbarEvents } from './tracker.js';
 import { renderDashboard, setupDashboardEvents } from './dashboard.js';
 import { setupSettingsForms } from './settings.js';
+import { renderUserManagement, setupUsersEvents } from './users.js';
 
-function initApp() {
-  loadFromStorage();
+async function initApp() {
+  await loadFromStorage();
   initYearCollapseState();
   renderLeaveTracker();
   renderDashboard();
   updateGlobalBadges();
+
+  const user = getCurrentUser();
+  if (user && user.isAdmin) {
+    renderUserManagement();
+  }
 }
 
 function setupTabNavigation() {
   const trackerTab = document.getElementById('tab-btn-tracker');
   const dashboardTab = document.getElementById('tab-btn-dashboard');
+  const usersTab = document.getElementById('tab-btn-users');
+
   const trackerPanel = document.getElementById('view-tracker');
   const dashboardPanel = document.getElementById('view-dashboard');
+  const usersPanel = document.getElementById('view-users');
 
-  if (trackerTab && dashboardTab) {
-    trackerTab.addEventListener('click', () => {
-      trackerTab.classList.add('active');
-      trackerTab.setAttribute('aria-selected', 'true');
-      dashboardTab.classList.remove('active');
-      dashboardTab.setAttribute('aria-selected', 'false');
-
-      trackerPanel.classList.remove('hidden');
-      dashboardPanel.classList.add('hidden');
-      renderLeaveTracker();
+  function switchTab(activeBtn, activePanel) {
+    [trackerTab, dashboardTab, usersTab].forEach(btn => {
+      if (!btn) return;
+      const isActive = btn === activeBtn;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
 
-    dashboardTab.addEventListener('click', () => {
-      dashboardTab.classList.add('active');
-      dashboardTab.setAttribute('aria-selected', 'true');
-      trackerTab.classList.remove('active');
-      trackerTab.setAttribute('aria-selected', 'false');
+    [trackerPanel, dashboardPanel, usersPanel].forEach(panel => {
+      if (!panel) return;
+      panel.classList.toggle('hidden', panel !== activePanel);
+    });
+  }
 
-      dashboardPanel.classList.remove('hidden');
-      trackerPanel.classList.add('hidden');
+  if (trackerTab) {
+    trackerTab.addEventListener('click', () => {
+      switchTab(trackerTab, trackerPanel);
+      renderLeaveTracker();
+    });
+  }
+
+  if (dashboardTab) {
+    dashboardTab.addEventListener('click', () => {
+      switchTab(dashboardTab, dashboardPanel);
       renderDashboard();
+    });
+  }
+
+  if (usersTab) {
+    usersTab.addEventListener('click', () => {
+      switchTab(usersTab, usersPanel);
+      renderUserManagement();
     });
   }
 }
@@ -54,5 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTrackerToolbarEvents();
   setupDashboardEvents();
   setupSettingsForms();
+  setupUsersEvents();
   checkAuth(initApp);
 });

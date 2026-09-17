@@ -1,0 +1,13 @@
+{
+  "name": "leave-tracker",
+  "version": "2.0.0",
+  "description": "Personal and Multi-User Leave Tracker with Neon PostgreSQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.3"
+  }
+}

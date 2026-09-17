@@ -1,9 +1,10 @@
 /**
- * State Management & Storage Persistence
+ * State Management & Database Persistence (Neon PostgreSQL)
  * Personal Leave Tracker
  */
 
-import { STORAGE_KEYS, DEFAULT_YEARS, DEFAULT_LEAVE_TYPES, SEED_ENTRIES_2026, DAY_NAMES } from '../config.js';
+import { STORAGE_KEYS, DEFAULT_YEARS, DEFAULT_LEAVE_TYPES, DAY_NAMES } from '../config.js';
+import { authFetch } from './auth.js';
 
 export const state = {
   settings: {
@@ -22,7 +23,8 @@ export const state = {
     direction: 'asc'
   },
   collapsedYears: {},
-  dashboardYear: 'ALL'
+  dashboardYear: 'ALL',
+  isSyncing: false
 };
 
 export function generateId() {
@@ -72,64 +74,112 @@ export function showToast(message, type = 'info') {
   }, 2800);
 }
 
-export function loadFromStorage() {
+// Load data directly from Neon PostgreSQL
+export async function loadFromStorage() {
   try {
-    const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (savedSettings) {
-      state.settings = JSON.parse(savedSettings);
-    }
-  } catch (e) {
-    console.error('Error loading settings', e);
-  }
-
-  try {
-    const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-    if (savedEntries) {
-      state.entries = JSON.parse(savedEntries);
+    const res = await authFetch('/api/data');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.settings) {
+        state.settings = data.settings;
+      }
+      if (data.entries) {
+        state.entries = data.entries;
+      }
     } else {
-      seedInitialData();
+      console.warn('Could not load data from API, using defaults');
     }
   } catch (e) {
-    console.error('Error loading entries', e);
-    seedInitialData();
+    console.error('Error fetching data from Neon DB:', e);
   }
 
   normalizeData();
+  updateGlobalBadges();
+  updateDbStatusPill();
 }
 
-export function saveSettingsToStorage() {
+export async function saveSettingsToStorage() {
   try {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+    // Send to Neon PostgreSQL
+    await authFetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.settings)
+    });
   } catch (e) {
-    console.error('Failed to persist settings', e);
+    console.error('Failed to persist settings to DB', e);
   }
 }
 
-export function saveEntriesToStorage() {
-  try {
-    normalizeData();
-    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(state.entries));
-    updateGlobalBadges();
-  } catch (e) {
-    console.error('Failed to persist entries', e);
+// Debounce helper for entry saving
+let saveEntriesTimer = null;
+
+export function saveEntriesToStorage(immediate = false) {
+  normalizeData();
+  updateGlobalBadges();
+
+  if (saveEntriesTimer) {
+    clearTimeout(saveEntriesTimer);
+    saveEntriesTimer = null;
+  }
+
+  if (immediate) {
+    syncEntriesToDB();
+  } else {
+    saveEntriesTimer = setTimeout(() => {
+      syncEntriesToDB();
+    }, 600);
   }
 }
 
-export function seedInitialData() {
-  state.entries = {};
-  state.settings.years = [2026];
+async function syncEntriesToDB() {
+  state.isSyncing = true;
+  updateSyncIndicator(true);
 
-  state.entries[2026] = SEED_ENTRIES_2026.map((item, idx) => ({
-    id: generateId(),
-    sNo: idx + 1,
-    date: item.date,
-    day: getDayName(item.date),
-    leaveType: item.leaveType,
-    reason: item.reason
-  }));
+  try {
+    const res = await authFetch('/api/entries/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries: state.entries })
+    });
 
-  saveSettingsToStorage();
-  saveEntriesToStorage();
+    if (!res.ok) {
+      console.warn('Sync response not ok:', res.status);
+    }
+  } catch (e) {
+    console.error('Failed to sync entries with Neon DB:', e);
+  } finally {
+    state.isSyncing = false;
+    updateSyncIndicator(false);
+  }
+}
+
+function updateSyncIndicator(isSyncing) {
+  const syncPill = document.getElementById('db-sync-indicator');
+  if (syncPill) {
+    if (isSyncing) {
+      syncPill.innerHTML = '<span class="pill-dot syncing"></span><span>Saving to DB...</span>';
+    } else {
+      syncPill.innerHTML = '<span class="pill-dot connected"></span><span>Saved to DB</span>';
+    }
+  }
+}
+
+export async function updateDbStatusPill() {
+  const pill = document.getElementById('db-status-pill');
+  if (!pill) return;
+  try {
+    const res = await fetch('/api/health');
+    if (res.ok) {
+      const data = await res.json();
+      pill.innerHTML = `<span class="db-dot online"></span><span>Neon DB (${data.latencyMs}ms)</span>`;
+      pill.title = `Connected to Neon PostgreSQL • Latency: ${data.latencyMs}ms`;
+    } else {
+      pill.innerHTML = `<span class="db-dot offline"></span><span>DB Offline</span>`;
+    }
+  } catch (e) {
+    pill.innerHTML = `<span class="db-dot offline"></span><span>DB Offline</span>`;
+  }
 }
 
 export function normalizeData() {
