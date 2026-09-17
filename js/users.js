@@ -12,6 +12,11 @@ export async function renderUserManagement() {
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.isAdmin) return;
 
+  const toggle = document.getElementById('toggle-auto-year-unlock');
+  if (toggle) {
+    toggle.checked = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
+  }
+
   await loadUsersList();
   renderDbDetailsCard();
 }

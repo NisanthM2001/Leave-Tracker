@@ -157,6 +157,14 @@
 
         <!-- Year Sections Container -->
         <div id="years-container" class="years-container"></div>
+
+        <!-- Automatic Year Unlock Notice -->
+        <div class="auto-year-notice card" id="auto-year-notice">
+          <div class="auto-year-notice-content">
+            <span class="notice-badge">📆 Automatic Progression</span>
+            <p id="auto-year-notice-text">Upcoming years (such as 2027) will automatically unlock as soon as the new calendar year starts.</p>
+          </div>
+        </div>
       </section>
 
       <!-- TAB 2: DASHBOARD -->
@@ -246,7 +254,7 @@
                 <div class="settings-list-wrapper"><ul class="settings-list" id="settings-leave-types-list"></ul></div>
               </div>
 
-              <!-- Years & Automatic Calendar Unlock -->
+              <!-- Active Tracking Years (Auto & Manual) -->
               <div class="settings-box">
                 <div class="settings-box-header">
                   <div>
@@ -254,17 +262,13 @@
                     <span class="settings-badge" id="years-count">1 year</span>
                   </div>
                 </div>
-                <div class="settings-list-wrapper"><div class="years-chip-grid" id="settings-years-list"></div></div>
-                <div class="admin-year-progression-box hidden" id="admin-year-progression-box">
-                  <label class="checkbox-label" for="toggle-auto-year-unlock">
-                    <input type="checkbox" id="toggle-auto-year-unlock" checked>
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">
-                      <strong>Automatic Year Progression (Admin)</strong>
-                      <small>Automatically unlocks and opens 2027, 2028 when the calendar year begins</small>
-                    </span>
-                  </label>
+                <div class="settings-list-wrapper">
+                  <div class="years-chip-grid" id="settings-years-list"></div>
                 </div>
+                <form id="form-add-year" class="settings-add-year-form" autocomplete="off">
+                  <input type="number" id="input-new-year" placeholder="Add year manually (e.g. 2027)" min="2000" max="2150" required>
+                  <button type="submit" class="btn btn-secondary btn-sm">+ Add Year</button>
+                </form>
               </div>
             </div>
 
@@ -424,6 +428,29 @@
                   <div class="db-info-item">
                     <span class="db-info-label">Last Ping</span>
                     <span class="db-info-value" id="db-info-time">Live</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Global System Controls (Admin Exclusive) -->
+              <div class="card admin-settings-card mt-4">
+                <div class="card-header header-gold">
+                  <div class="card-title">
+                    <span>⚙️</span>
+                    <h3>System & Progression Controls</h3>
+                  </div>
+                  <span class="card-tag gold-tag">Admin Controls</span>
+                </div>
+                <div class="card-body">
+                  <div class="admin-setting-item">
+                    <label class="checkbox-label" for="toggle-auto-year-unlock">
+                      <input type="checkbox" id="toggle-auto-year-unlock" checked>
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">
+                        <strong>Enable Automatic Calendar Year Progression</strong>
+                        <small>When enabled, upcoming years (2027, 2028...) automatically appear in all users' trackers as soon as the calendar year begins. If disabled, users can add years manually from Settings.</small>
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>

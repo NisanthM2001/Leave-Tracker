@@ -68,7 +68,24 @@ function renderSettingsYears() {
     chip.innerHTML = `
       <span class="year-chip-icon">📅</span>
       <span>${y}</span>
+      ${state.settings.years.length > 1 ? `<button type="button" class="btn-remove-year" title="Remove year ${y}">✕</button>` : ''}
     `;
+
+    const removeBtn = chip.querySelector('.btn-remove-year');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Remove year ${y}? Existing leave entries for ${y} will be archived.`)) {
+          state.settings.years = state.settings.years.filter(year => year !== y);
+          saveSettingsToStorage();
+          renderSettings();
+          renderLeaveTracker();
+          renderDashboard();
+          showToast(`Year ${y} removed.`, 'info');
+        }
+      });
+    }
+
     chipGrid.appendChild(chip);
   });
 }
@@ -189,11 +206,42 @@ export function setupSettingsForms() {
       localStorage.setItem('leave_tracker_auto_year_unlock', e.target.checked);
       if (e.target.checked) {
         showToast('Automatic year progression enabled. Upcoming years unlock automatically.', 'success');
-        renderLeaveTracker();
-        renderSettings();
       } else {
-        showToast('Automatic year progression disabled.', 'info');
+        showToast('Automatic year progression disabled. Users can add years manually.', 'info');
       }
+      renderLeaveTracker();
+      renderSettings();
+    });
+  }
+
+  // 5. Add Year Manually Form
+  const addYearForm = document.getElementById('form-add-year');
+  if (addYearForm) {
+    addYearForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('input-new-year');
+      if (!input) return;
+      const year = parseInt(input.value, 10);
+      if (isNaN(year) || year < 2000 || year > 2150) {
+        showToast('Please enter a valid 4-digit year (e.g. 2027).', 'error');
+        return;
+      }
+      if (state.settings.years.includes(year)) {
+        showToast(`Year ${year} is already active in your tracker.`, 'error');
+        return;
+      }
+      state.settings.years.push(year);
+      state.settings.years.sort((a, b) => a - b);
+      if (!state.entries[year]) {
+        state.entries[year] = [];
+      }
+      saveSettingsToStorage();
+      saveEntriesToStorage();
+      input.value = '';
+      renderSettings();
+      renderLeaveTracker();
+      renderDashboard();
+      showToast(`Year ${year} added successfully!`, 'success');
     });
   }
 

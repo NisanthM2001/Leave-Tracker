@@ -31,10 +31,27 @@ export function checkAutoYearProgression() {
   }
 }
 
+export function updateAutoYearNotice() {
+  const noticeEl = document.getElementById('auto-year-notice');
+  const noticeText = document.getElementById('auto-year-notice-text');
+  if (!noticeEl || !noticeText) return;
+
+  const isAuto = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
+  const currentMaxYear = Math.max(...state.settings.years, 2026);
+  const nextYear = currentMaxYear + 1;
+
+  if (isAuto) {
+    noticeText.innerHTML = `Upcoming year <strong>${nextYear}</strong> will automatically appear in your tracker as soon as ${nextYear} begins.`;
+  } else {
+    noticeText.innerHTML = `Automatic year progression is currently turned off. You can add year <strong>${nextYear}</strong> manually from the <strong>Dashboard Settings</strong> tab.`;
+  }
+}
+
 export function renderLeaveTracker() {
   checkAutoYearProgression();
   populateFilterDropdowns();
   renderAllYearSections();
+  updateAutoYearNotice();
 }
 
 export function populateFilterDropdowns() {
