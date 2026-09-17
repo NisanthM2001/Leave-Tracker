@@ -7,7 +7,14 @@ const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle Neon DB client:', err.message);
 });
 
 // Helper for Day calculation
@@ -26,6 +33,14 @@ const DEFAULT_LEAVE_TYPES = [
   { id: 'wfh', name: 'Work From Home', color: 'green', category: 'Remote Working' },
   { id: 'sick', name: 'Sick Leave', color: 'yellow', category: 'Medical' }
 ];
+
+let isDatabaseInitialized = false;
+
+async function ensureDatabase() {
+  if (isDatabaseInitialized) return;
+  await initDatabase();
+  isDatabaseInitialized = true;
+}
 
 async function initDatabase() {
   const client = await pool.connect();
@@ -123,6 +138,7 @@ async function initDatabase() {
 module.exports = {
   pool,
   initDatabase,
+  ensureDatabase,
   DEFAULT_LEAVE_TYPES,
   getDayName
 };

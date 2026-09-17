@@ -111,7 +111,15 @@ export async function handleLoginSubmit(e, onSuccessCallback) {
       body: JSON.stringify({ username, password })
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      console.error('Server response was not valid JSON:', res.status, res.statusText);
+      if (errorBox) errorBox.classList.remove('hidden');
+      if (errorText) errorText.textContent = `Backend error (${res.status} ${res.statusText}). Retrying...`;
+      return;
+    }
 
     if (res.ok && data.success) {
       if (errorBox) errorBox.classList.add('hidden');
@@ -128,8 +136,9 @@ export async function handleLoginSubmit(e, onSuccessCallback) {
       passwordInput.focus();
     }
   } catch (err) {
+    console.error('Login fetch error:', err);
     if (errorBox) errorBox.classList.remove('hidden');
-    if (errorText) errorText.textContent = 'Network or server connection error. Please try again.';
+    if (errorText) errorText.textContent = 'Connection error. Please check your network connection.';
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
