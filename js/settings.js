@@ -13,7 +13,7 @@ let currentSelectedEmoji = '🏖️';
 export function renderSettings() {
   renderSettingsLeaveTypes();
   renderSettingsYears();
-  initAutoYearToggleState();
+  initAdminControlsState();
 }
 
 function renderSettingsLeaveTypes() {
@@ -88,13 +88,36 @@ function renderSettingsYears() {
 
     chipGrid.appendChild(chip);
   });
+
+  // Toggle display of manual add year form vs disabled notice
+  const allowManual = localStorage.getItem('leave_tracker_allow_manual_year_add') === 'true';
+  const addYearForm = document.getElementById('form-add-year');
+  const disabledNotice = document.getElementById('manual-year-disabled-notice');
+  if (addYearForm && disabledNotice) {
+    if (allowManual) {
+      addYearForm.classList.remove('hidden');
+      disabledNotice.classList.add('hidden');
+    } else {
+      addYearForm.classList.add('hidden');
+      disabledNotice.classList.remove('hidden');
+    }
+  }
 }
 
-function initAutoYearToggleState() {
-  const toggle = document.getElementById('toggle-auto-year-unlock');
-  if (toggle) {
-    const isAuto = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
-    toggle.checked = isAuto;
+export function initAdminControlsState() {
+  const autoYearToggle = document.getElementById('toggle-auto-year-unlock');
+  if (autoYearToggle) {
+    autoYearToggle.checked = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
+  }
+
+  const manualYearToggle = document.getElementById('toggle-allow-manual-year');
+  if (manualYearToggle) {
+    manualYearToggle.checked = localStorage.getItem('leave_tracker_allow_manual_year_add') === 'true';
+  }
+
+  const pastYearsToggle = document.getElementById('toggle-allow-past-years');
+  if (pastYearsToggle) {
+    pastYearsToggle.checked = localStorage.getItem('leave_tracker_allow_past_years') === 'true';
   }
 }
 
@@ -199,7 +222,7 @@ export function setupSettingsForms() {
     });
   }
 
-  // 4. Admin Auto-Year Progression Toggle
+  // 4. Admin System & Progression Controls
   const autoYearToggle = document.getElementById('toggle-auto-year-unlock');
   if (autoYearToggle) {
     autoYearToggle.addEventListener('change', (e) => {
@@ -211,6 +234,32 @@ export function setupSettingsForms() {
       }
       renderLeaveTracker();
       renderSettings();
+    });
+  }
+
+  const manualYearToggle = document.getElementById('toggle-allow-manual-year');
+  if (manualYearToggle) {
+    manualYearToggle.addEventListener('change', (e) => {
+      localStorage.setItem('leave_tracker_allow_manual_year_add', e.target.checked);
+      if (e.target.checked) {
+        showToast('Manual year addition in Settings enabled for users.', 'success');
+      } else {
+        showToast('Manual year addition in Settings disabled for users.', 'info');
+      }
+      renderSettings();
+    });
+  }
+
+  const pastYearsToggle = document.getElementById('toggle-allow-past-years');
+  if (pastYearsToggle) {
+    pastYearsToggle.addEventListener('change', (e) => {
+      localStorage.setItem('leave_tracker_allow_past_years', e.target.checked);
+      if (e.target.checked) {
+        showToast('Previous years (< 2026) selection in date picker enabled.', 'success');
+      } else {
+        showToast('Previous years selection disabled (strictly 2026+).', 'info');
+      }
+      renderLeaveTracker();
     });
   }
 

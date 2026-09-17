@@ -74,12 +74,17 @@ export function populateFilterDropdowns() {
   if (yearFilter) {
     const prevY = yearFilter.value;
     yearFilter.innerHTML = '<option value="ALL">All Years</option>';
-    state.settings.years.slice().sort((a, b) => b - a).forEach(y => {
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = `Year ${y}`;
-      yearFilter.appendChild(opt);
-    });
+    const allowPastYears = localStorage.getItem('leave_tracker_allow_past_years') === 'true';
+    state.settings.years
+      .slice()
+      .filter(y => allowPastYears || y >= 2026)
+      .sort((a, b) => b - a)
+      .forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `Year ${y}`;
+        yearFilter.appendChild(opt);
+      });
     if (yearFilter.querySelector(`option[value="${prevY}"]`)) {
       yearFilter.value = prevY;
     }
@@ -91,7 +96,11 @@ export function renderAllYearSections() {
   if (!container) return;
   container.innerHTML = '';
 
-  const yearsSorted = state.settings.years.slice().sort((a, b) => a - b);
+  const allowPastYears = localStorage.getItem('leave_tracker_allow_past_years') === 'true';
+  const yearsSorted = state.settings.years
+    .slice()
+    .filter(y => allowPastYears || y >= 2026)
+    .sort((a, b) => a - b);
   const selectedYearFilter = state.filters.year;
 
   yearsSorted.forEach(year => {

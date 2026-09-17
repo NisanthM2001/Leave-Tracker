@@ -5,6 +5,7 @@
 
 import { authFetch, getCurrentUser } from './auth.js';
 import { showToast } from './state.js';
+import { initAdminControlsState } from './settings.js';
 
 let cachedUsers = [];
 
@@ -12,11 +13,7 @@ export async function renderUserManagement() {
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.isAdmin) return;
 
-  const toggle = document.getElementById('toggle-auto-year-unlock');
-  if (toggle) {
-    toggle.checked = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
-  }
-
+  initAdminControlsState();
   await loadUsersList();
   renderDbDetailsCard();
 }

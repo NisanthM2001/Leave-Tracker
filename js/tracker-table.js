@@ -87,6 +87,17 @@ export function renderYearSection(year) {
   return card;
 }
 
+const editingRowIds = new Set();
+
+export function formatDisplayDate(dateStr) {
+  if (!dateStr) return '—';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateStr;
+}
+
 export function populateYearTbody(year, tbody) {
   tbody.innerHTML = '';
   const rawRows = state.entries[year] || [];
@@ -115,53 +126,143 @@ export function populateYearTbody(year, tbody) {
     return;
   }
 
+  const allowPastYears = localStorage.getItem('leave_tracker_allow_past_years') === 'true';
+  const minDate = allowPastYears ? '2000-01-01' : `${Math.max(2026, year)}-01-01`;
+  const maxDate = `${year}-12-31`;
+
   displayRows.forEach(row => {
+    const isEditing = editingRowIds.has(row.id);
     const tr = document.createElement('tr');
     tr.className = row.leaveType ? getLeaveColorClass(row.leaveType) : 'row-empty';
     tr.id = `row-${row.id}`;
+    if (isEditing) tr.classList.add('row-is-editing');
     const dayWeekend = isWeekend(row.day);
 
-    let typeOpts = '<option value="">-- Select Type --</option>';
-    state.settings.leaveTypes.forEach(t => {
-      typeOpts += `<option value="${t.name}" ${(row.leaveType || '').toLowerCase() === t.name.toLowerCase() ? 'selected' : ''}>${t.name}</option>`;
-    });
+    if (isEditing) {
+      // EDIT MODE
+      let typeOpts = '<option value="">-- Select Type --</option>';
+      state.settings.leaveTypes.forEach(t => {
+        typeOpts += `<option value="${t.name}" ${(row.leaveType || '').toLowerCase() === t.name.toLowerCase() ? 'selected' : ''}>${t.name}</option>`;
+      });
 
-    tr.innerHTML = `
-      <td class="cell-sno"><span class="sno-badge">${row.sNo}</span></td>
-      <td><input type="date" class="cell-input-date" value="${row.date || ''}" min="${year}-01-01" max="${year}-12-31" aria-label="Leave Date"></td>
-      <td><div class="day-cell ${dayWeekend ? 'weekend' : ''}">${row.day ? (dayWeekend ? '⚠️ ' + row.day : row.day) : '<span class="dash-empty">—</span>'}</div></td>
-      <td><select class="cell-select-type" aria-label="Leave Type">${typeOpts}</select></td>
-      <td><input type="text" class="cell-input-text" value="${(row.reason || '').replace(/"/g, '&quot;')}" placeholder="Reason or purpose..." aria-label="Reason"></td>
-      <td class="cell-actions"><button type="button" class="btn-icon btn-delete" title="Delete entry">🗑️</button></td>
-    `;
+      tr.innerHTML = `
+        <td class="cell-sno"><span class="sno-badge">${row.sNo}</span></td>
+        <td><input type="date" class="cell-input-date" value="${row.date || ''}" min="${minDate}" max="${maxDate}" aria-label="Leave Date"></td>
+        <td><div class="day-cell ${dayWeekend ? 'weekend' : ''}">${row.day ? (dayWeekend ? '⚠️ ' + row.day : row.day) : '<span class="dash-empty">—</span>'}</div></td>
+        <td><select class="cell-select-type" aria-label="Leave Type">${typeOpts}</select></td>
+        <td><input type="text" class="cell-input-text" value="${(row.reason || '').replace(/"/g, '&quot;')}" placeholder="Reason or purpose..." aria-label="Reason"></td>
+        <td class="cell-actions">
+          <div class="row-actions-group">
+            <button type="button" class="btn-icon btn-save" title="Save changes (💾)">💾</button>
+            <button type="button" class="btn-icon btn-cancel" title="Cancel edit (✕)">✕</button>
+          </div>
+        </td>
+      `;
 
-    const dInput = tr.querySelector('.cell-input-date');
-    const tSelect = tr.querySelector('.cell-select-type');
-    const rInput = tr.querySelector('.cell-input-text');
+      const dInput = tr.querySelector('.cell-input-date');
+      const tSelect = tr.querySelector('.cell-select-type');
+      const rInput = tr.querySelector('.cell-input-text');
+      const dayCell = tr.querySelector('.day-cell');
 
-    dInput.addEventListener('change', (e) => {
-      row.date = e.target.value;
-      row.day = getDayName(row.date);
-      if (row.date && !row.leaveType && state.settings.leaveTypes.length > 0) {
-        row.leaveType = state.settings.leaveTypes[0].name;
-        tSelect.value = row.leaveType;
-      }
-      saveEntriesToStorage();
-      renderLeaveTracker();
-    });
+      dInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        const dName = getDayName(val);
+        const isW = isWeekend(dName);
+        dayCell.className = `day-cell ${isW ? 'weekend' : ''}`;
+        dayCell.innerHTML = dName ? (isW ? '⚠️ ' + dName : dName) : '<span class="dash-empty">—</span>';
+        if (val && !tSelect.value && state.settings.leaveTypes.length > 0) {
+          tSelect.value = state.settings.leaveTypes[0].name;
+        }
+      });
 
-    tSelect.addEventListener('change', (e) => {
-      row.leaveType = e.target.value;
-      saveEntriesToStorage();
-      tr.className = row.leaveType ? getLeaveColorClass(row.leaveType) : 'row-empty';
-    });
+      rInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          tr.querySelector('.btn-save').click();
+        }
+      });
 
-    rInput.addEventListener('change', (e) => {
-      row.reason = e.target.value.trim();
-      saveEntriesToStorage();
-    });
+      // Save Action
+      tr.querySelector('.btn-save').addEventListener('click', () => {
+        const newDate = dInput.value;
+        const newType = tSelect.value;
+        const newReason = rInput.value.trim();
 
-    tr.querySelector('.btn-delete').addEventListener('click', () => deleteRow(year, row.id));
+        if (newDate) {
+          row.date = newDate;
+          row.day = getDayName(newDate);
+        }
+        if (newType) {
+          row.leaveType = newType;
+        }
+        row.reason = newReason;
+
+        editingRowIds.delete(row.id);
+        saveEntriesToStorage();
+        renderLeaveTracker();
+        showToast(`Saved entry #${row.sNo}.`, 'success');
+      });
+
+      // Cancel Action
+      tr.querySelector('.btn-cancel').addEventListener('click', () => {
+        editingRowIds.delete(row.id);
+        if (!row.date && !row.reason) {
+          state.entries[year] = state.entries[year].filter(r => r.id !== row.id);
+          state.entries[year].forEach((r, idx) => { r.sNo = idx + 1; });
+          saveEntriesToStorage();
+        }
+        renderLeaveTracker();
+      });
+
+    } else {
+      // VIEW MODE (Read-only, protected from accidental clicks)
+      const matchedType = state.settings.leaveTypes.find(t => (t.name || '').toLowerCase() === (row.leaveType || '').toLowerCase());
+      const typeColor = matchedType?.color || 'blue';
+
+      tr.innerHTML = `
+        <td class="cell-sno"><span class="sno-badge">${row.sNo}</span></td>
+        <td>
+          <div class="cell-display cell-display-date">
+            <span>${formatDisplayDate(row.date)}</span>
+            <span class="date-icon">📅</span>
+          </div>
+        </td>
+        <td><div class="day-cell ${dayWeekend ? 'weekend' : ''}">${row.day ? (dayWeekend ? '⚠️ ' + row.day : row.day) : '<span class="dash-empty">—</span>'}</div></td>
+        <td>
+          <div class="cell-display cell-display-type">
+            <span class="leave-type-pill" style="border-left: 3.5px solid var(--leave-${typeColor}-border, #4472C4);">${row.leaveType || '—'}</span>
+          </div>
+        </td>
+        <td>
+          <div class="cell-display cell-display-reason" title="${(row.reason || '').replace(/"/g, '&quot;')}">
+            ${(row.reason || '').replace(/"/g, '&quot;') || '<span class="dash-empty">—</span>'}
+          </div>
+        </td>
+        <td class="cell-actions">
+          <div class="row-actions-group">
+            <button type="button" class="btn-icon btn-edit" title="Edit entry (✏️)">✏️</button>
+            <button type="button" class="btn-icon btn-delete" title="Delete entry (🗑️)">🗑️</button>
+          </div>
+        </td>
+      `;
+
+      tr.querySelector('.btn-edit').addEventListener('click', () => {
+        editingRowIds.add(row.id);
+        renderLeaveTracker();
+        setTimeout(() => {
+          const activeRow = document.getElementById(`row-${row.id}`);
+          if (activeRow) {
+            const dateInp = activeRow.querySelector('.cell-input-date');
+            if (dateInp) {
+              dateInp.focus();
+              try { dateInp.showPicker(); } catch (_) {}
+            }
+          }
+        }, 50);
+      });
+
+      tr.querySelector('.btn-delete').addEventListener('click', () => deleteRow(year, row.id));
+    }
+
     tbody.appendChild(tr);
   });
 }
@@ -181,6 +282,7 @@ export function addNewEntryToYear(year) {
   };
 
   rows.push(newEntry);
+  editingRowIds.add(newEntry.id);
   saveEntriesToStorage();
   renderLeaveTracker();
 
@@ -193,11 +295,12 @@ export function addNewEntryToYear(year) {
     }
   }, 100);
 
-  showToast(`Added entry slot #${newEntry.sNo} in Year ${year}`, 'success');
+  showToast(`Added entry #${newEntry.sNo}. Edit details and click 💾 to save.`, 'info');
 }
 
 export function deleteRow(year, rowId) {
   if (!confirm('Are you sure you want to delete this record?')) return;
+  editingRowIds.delete(rowId);
   state.entries[year] = (state.entries[year] || []).filter(r => r.id !== rowId);
   // Re-number strictly in ascending order: 1, 2, 3...
   state.entries[year].forEach((r, idx) => { r.sNo = idx + 1; });

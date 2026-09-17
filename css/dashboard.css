@@ -265,6 +265,35 @@
   flex: 1;
 }
 
+.manual-year-disabled-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 16px;
+  background: #F8FAFC;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: var(--radius-md);
+  margin-top: 14px;
+}
+.manual-year-disabled-notice .notice-lock-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.manual-year-disabled-notice .notice-text p {
+  margin: 0 0 3px 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+.manual-year-disabled-notice .notice-text small {
+  font-size: 0.795rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: block;
+}
+
 /* Data Utilities */
 .settings-utilities {
   padding-top: 20px;

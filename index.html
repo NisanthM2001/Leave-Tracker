@@ -269,6 +269,13 @@
                   <input type="number" id="input-new-year" placeholder="Add year manually (e.g. 2027)" min="2000" max="2150" required>
                   <button type="submit" class="btn btn-secondary btn-sm">+ Add Year</button>
                 </form>
+                <div class="manual-year-disabled-notice hidden" id="manual-year-disabled-notice">
+                  <span class="notice-lock-icon">🔒</span>
+                  <div class="notice-text">
+                    <p><strong>Manual Year Addition is Disabled</strong></p>
+                    <small>This feature is disabled. It will automatically update if new year starts. If you want, please ask the admin.</small>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -448,7 +455,29 @@
                       <span class="checkbox-custom"></span>
                       <span class="checkbox-text">
                         <strong>Enable Automatic Calendar Year Progression</strong>
-                        <small>When enabled, upcoming years (2027, 2028...) automatically appear in all users' trackers as soon as the calendar year begins. If disabled, users can add years manually from Settings.</small>
+                        <small>When enabled, upcoming years (2027, 2028...) automatically appear in all users' trackers as soon as the calendar year begins.</small>
+                      </span>
+                    </label>
+                  </div>
+
+                  <div class="admin-setting-item mt-3">
+                    <label class="checkbox-label" for="toggle-allow-manual-year">
+                      <input type="checkbox" id="toggle-allow-manual-year">
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">
+                        <strong>Allow Manual Year Addition in Dashboard Settings</strong>
+                        <small>When enabled, users can type and add upcoming years (such as 2027) in Settings. When disabled, the Add Year field is replaced with a notice asking users to contact admin, and years will update automatically with new calendar years.</small>
+                      </span>
+                    </label>
+                  </div>
+
+                  <div class="admin-setting-item mt-3">
+                    <label class="checkbox-label" for="toggle-allow-past-years">
+                      <input type="checkbox" id="toggle-allow-past-years">
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">
+                        <strong>Allow Previous Years Selection in Date Picker</strong>
+                        <small>When enabled, users can select and enter records for past years prior to 2026. By default, date selection starts strictly from 2026 onwards, with upcoming years (2027+) supported automatically.</small>
                       </span>
                     </label>
                   </div>
