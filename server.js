@@ -195,6 +195,18 @@ const server = http.createServer(async (req, res) => {
           `, [user.id, JSON.stringify([2026]), JSON.stringify(DEFAULT_LEAVE_TYPES)]);
         }
 
+        // Ensure every leave type has an icon
+        settings.leaveTypes = (settings.leaveTypes || DEFAULT_LEAVE_TYPES).map(t => {
+          if (!t.icon) {
+            const lower = (t.name || '').toLowerCase();
+            if (lower.includes('sick')) t.icon = '🤒';
+            else if (lower.includes('home') || lower.includes('wfh')) t.icon = '💻';
+            else if (lower.includes('leave')) t.icon = '🏖️';
+            else t.icon = '📌';
+          }
+          return t;
+        });
+
         // Load Entries
         const entriesRes = await pool.query(`
           SELECT id, year, s_no, date, day, leave_type, reason

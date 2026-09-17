@@ -57,18 +57,36 @@ export async function checkAuth(onSuccessCallback) {
       userDisplay.textContent = user.displayName || user.username;
     }
 
-    // Toggle Admin "User Management" tab visibility - ONLY for Nisanth / Admin
+    // Toggle Admin-only elements (User Management tab, DB status pill, Year progression toggle)
+    const dbStatusPill = document.getElementById('db-status-pill');
+    const yearProgressionBox = document.getElementById('admin-year-progression-box');
+
     if (usersTab) {
       if (user.isAdmin) {
         usersTab.classList.remove('hidden');
       } else {
         usersTab.classList.add('hidden');
-        // If non-admin had the user tab active, fallback to tracker
         const viewUsers = document.getElementById('view-users');
         if (viewUsers && !viewUsers.classList.contains('hidden')) {
           const trackerTab = document.getElementById('tab-btn-tracker');
           if (trackerTab) trackerTab.click();
         }
+      }
+    }
+
+    if (dbStatusPill) {
+      if (user.isAdmin) {
+        dbStatusPill.classList.remove('hidden');
+      } else {
+        dbStatusPill.classList.add('hidden');
+      }
+    }
+
+    if (yearProgressionBox) {
+      if (user.isAdmin) {
+        yearProgressionBox.classList.remove('hidden');
+      } else {
+        yearProgressionBox.classList.add('hidden');
       }
     }
 

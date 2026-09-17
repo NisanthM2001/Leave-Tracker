@@ -29,9 +29,9 @@ function getDayName(dateString) {
 }
 
 const DEFAULT_LEAVE_TYPES = [
-  { id: 'leave', name: 'Leave', color: 'red', category: 'Annual / Vacation' },
-  { id: 'wfh', name: 'Work From Home', color: 'green', category: 'Remote Working' },
-  { id: 'sick', name: 'Sick Leave', color: 'yellow', category: 'Medical' }
+  { id: 'leave', name: 'Leave', color: 'red', category: 'Annual / Vacation', icon: '🏖️' },
+  { id: 'wfh', name: 'Work From Home', color: 'green', category: 'Remote Working', icon: '💻' },
+  { id: 'sick', name: 'Sick Leave', color: 'yellow', category: 'Medical', icon: '🤒' }
 ];
 
 let isDatabaseInitialized = false;

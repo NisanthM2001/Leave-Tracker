@@ -80,8 +80,8 @@ function renderSummaryTable() {
     tr.innerHTML = `
       <td>
         <span class="summary-pill row-leave-${t.color || 'blue'}">
-          <span class="summary-dot" style="background-color: currentColor;"></span>
-          ${t.name}
+          <span class="summary-pill-emoji">${t.icon || '📌'}</span>
+          <span>${t.name}</span>
         </span>
       </td>
       <td style="color: var(--text-muted); font-size: 0.85rem;">${t.category || 'General'}</td>
@@ -100,17 +100,35 @@ function renderSummaryTable() {
 }
 
 function renderQuickMetricTiles() {
-  const entries = getFilteredEntriesForDashboard();
-  const leaveC = entries.filter(r => (r.leaveType || '').toLowerCase() === 'leave').length;
-  const wfhC = entries.filter(r => (r.leaveType || '').toLowerCase() === 'work from home').length;
-  const sickC = entries.filter(r => (r.leaveType || '').toLowerCase() === 'sick leave').length;
+  const container = document.getElementById('metrics-cards-container');
+  if (!container) return;
+  container.innerHTML = '';
 
-  const lEl = document.getElementById('metric-leave-count');
-  const wEl = document.getElementById('metric-wfh-count');
-  const sEl = document.getElementById('metric-sick-count');
-  if (lEl) lEl.textContent = leaveC;
-  if (wEl) wEl.textContent = wfhC;
-  if (sEl) sEl.textContent = sickC;
+  const entries = getFilteredEntriesForDashboard();
+
+  // Calculate counts for each configured leave type
+  const counts = {};
+  state.settings.leaveTypes.forEach(t => { counts[t.name.toLowerCase()] = 0; });
+  entries.forEach(r => {
+    const k = (r.leaveType || '').toLowerCase();
+    counts[k] = (counts[k] || 0) + 1;
+  });
+
+  state.settings.leaveTypes.forEach(t => {
+    const count = counts[t.name.toLowerCase()] || 0;
+    const card = document.createElement('div');
+    card.className = `metric-card card card-border-${t.color || 'blue'}`;
+    card.innerHTML = `
+      <div class="metric-icon metric-icon-custom bg-tint-${t.color || 'blue'}">
+        <span>${t.icon || '📌'}</span>
+      </div>
+      <div class="metric-content">
+        <span class="metric-label" title="${t.name}">${t.name}</span>
+        <span class="metric-value">${count}</span>
+      </div>
+    `;
+    container.appendChild(card);
+  });
 }
 
 function renderMonthMatrix() {

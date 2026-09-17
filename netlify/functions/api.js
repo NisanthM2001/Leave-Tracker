@@ -198,6 +198,18 @@ exports.handler = async (event, context) => {
         settings.leaveTypes = settingsRes.rows[0].leave_types || DEFAULT_LEAVE_TYPES;
       }
 
+      // Ensure every leave type has an icon
+      settings.leaveTypes = (settings.leaveTypes || DEFAULT_LEAVE_TYPES).map(t => {
+        if (!t.icon) {
+          const lower = (t.name || '').toLowerCase();
+          if (lower.includes('sick')) t.icon = '🤒';
+          else if (lower.includes('home') || lower.includes('wfh')) t.icon = '💻';
+          else if (lower.includes('leave')) t.icon = '🏖️';
+          else t.icon = '📌';
+        }
+        return t;
+      });
+
       const entriesRes = await pool.query(`
         SELECT id, year, s_no, date, day, leave_type, reason
         FROM leave_entries

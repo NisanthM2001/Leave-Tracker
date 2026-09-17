@@ -17,10 +17,13 @@ export const STORAGE_KEYS = {
 
 // 2. Default Leave Categories & Colors
 export const DEFAULT_LEAVE_TYPES = [
-  { id: 'leave', name: 'Leave', color: 'red', category: 'Annual / Vacation' },
-  { id: 'wfh', name: 'Work From Home', color: 'green', category: 'Remote Working' },
-  { id: 'sick', name: 'Sick Leave', color: 'yellow', category: 'Medical' }
+  { id: 'leave', name: 'Leave', color: 'red', category: 'Annual / Vacation', icon: '🏖️' },
+  { id: 'wfh', name: 'Work From Home', color: 'green', category: 'Remote Working', icon: '💻' },
+  { id: 'sick', name: 'Sick Leave', color: 'yellow', category: 'Medical', icon: '🤒' }
 ];
+
+// Preset Emojis for quick selection
+export const PRESET_EMOJIS = ['🏖️', '💻', '🤒', '🌴', '🏥', '✈️', '👶', '☕', '🎓', '🎉', '🚗', '🏡', '🧘', '🩺', '📚', '⚡'];
 
 // 3. Initial Active Tracking Years
 export const DEFAULT_YEARS = [2026];

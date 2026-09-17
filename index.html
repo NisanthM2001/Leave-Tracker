@@ -101,7 +101,7 @@
         </button>
       </div>
       <div class="sheet-tabs-meta">
-        <div class="db-status-pill" id="db-status-pill" title="Checking database status...">
+        <div class="db-status-pill hidden" id="db-status-pill" title="Checking database status...">
           <span class="db-dot"></span>
           <span>Neon DB</span>
         </div>
@@ -150,7 +150,6 @@
           </div>
 
           <div class="toolbar-actions">
-            <button id="btn-add-next-year-top" class="btn btn-accent btn-sm" title="Start next dynamic year"><span>➕ Start Next Year</span></button>
             <button id="btn-expand-all" class="btn btn-ghost btn-sm" title="Expand all year tables">Expand All</button>
             <button id="btn-collapse-all" class="btn btn-ghost btn-sm" title="Collapse all year tables">Collapse All</button>
           </div>
@@ -203,21 +202,8 @@
             </div>
           </div>
 
-          <!-- Quick Metrics Tiles -->
-          <div class="metrics-cards-column">
-            <div class="metric-card card">
-              <div class="metric-icon metric-leave">🏖️</div>
-              <div class="metric-content"><span class="metric-label">Regular Leaves</span><span class="metric-value" id="metric-leave-count">0</span></div>
-            </div>
-            <div class="metric-card card">
-              <div class="metric-icon metric-wfh">💻</div>
-              <div class="metric-content"><span class="metric-label">Work From Home</span><span class="metric-value" id="metric-wfh-count">0</span></div>
-            </div>
-            <div class="metric-card card">
-              <div class="metric-icon metric-sick">🤒</div>
-              <div class="metric-content"><span class="metric-label">Sick Leaves</span><span class="metric-value" id="metric-sick-count">0</span></div>
-            </div>
-          </div>
+          <!-- Quick Metrics Tiles (Dynamically populated for all leave types) -->
+          <div class="metrics-cards-column" id="metrics-cards-container"></div>
         </div>
 
         <!-- Month-wise Breakdown Card -->
@@ -248,31 +234,37 @@
             <div class="settings-grid">
               <!-- Leave Types Manager -->
               <div class="settings-box">
-                <div class="settings-box-header"><h4>🎨 Leave Types</h4><span class="settings-badge" id="leave-types-count">3 types</span></div>
+                <div class="settings-box-header">
+                  <div>
+                    <h4>🎨 Leave Types</h4>
+                    <span class="settings-badge" id="leave-types-count">3 types</span>
+                  </div>
+                  <button type="button" id="btn-open-add-type-modal" class="btn btn-primary btn-sm">
+                    <span>➕ Add Leave Type</span>
+                  </button>
+                </div>
                 <div class="settings-list-wrapper"><ul class="settings-list" id="settings-leave-types-list"></ul></div>
-                <form id="form-add-leave-type" class="settings-add-form">
-                  <input type="text" id="input-new-leave-type" placeholder="New leave type name..." required maxlength="30">
-                  <select id="select-new-leave-color" title="Highlight Color Style">
-                    <option value="red">Light Red (Leave)</option>
-                    <option value="green">Light Green (Remote)</option>
-                    <option value="yellow">Light Yellow (Sick)</option>
-                    <option value="blue">Light Blue</option>
-                    <option value="purple">Light Purple</option>
-                    <option value="orange">Light Orange</option>
-                    <option value="teal">Light Teal</option>
-                  </select>
-                  <button type="submit" class="btn btn-secondary btn-sm">+ Add Type</button>
-                </form>
               </div>
 
-              <!-- Years Manager -->
+              <!-- Years & Automatic Calendar Unlock -->
               <div class="settings-box">
-                <div class="settings-box-header"><h4>📅 Active Tracking Years</h4><span class="settings-badge" id="years-count">1 year</span></div>
+                <div class="settings-box-header">
+                  <div>
+                    <h4>📅 Active Tracking Years</h4>
+                    <span class="settings-badge" id="years-count">1 year</span>
+                  </div>
+                </div>
                 <div class="settings-list-wrapper"><div class="years-chip-grid" id="settings-years-list"></div></div>
-                <form id="form-add-year" class="settings-add-form">
-                  <input type="number" id="input-new-year" placeholder="e.g. 2027" min="2000" max="2150" required>
-                  <button type="submit" class="btn btn-secondary btn-sm">+ Add Year</button>
-                </form>
+                <div class="admin-year-progression-box hidden" id="admin-year-progression-box">
+                  <label class="checkbox-label" for="toggle-auto-year-unlock">
+                    <input type="checkbox" id="toggle-auto-year-unlock" checked>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">
+                      <strong>Automatic Year Progression (Admin)</strong>
+                      <small>Automatically unlocks and opens 2027, 2028 when the calendar year begins</small>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -442,6 +434,96 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- ADD LEAVE TYPE MODAL POPUP -->
+  <div id="modal-add-leave-type" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-add-type-title">
+    <div class="modal-card">
+      <div class="modal-header header-gold">
+        <div class="modal-title-group">
+          <span class="modal-icon">🎨</span>
+          <div>
+            <h3 id="modal-add-type-title">Add New Leave Type</h3>
+            <p class="modal-subtitle">Custom icon, highlight color, and automatic dashboard tracking</p>
+          </div>
+        </div>
+        <button type="button" class="btn-modal-close" id="btn-close-modal-type" aria-label="Close modal">✕</button>
+      </div>
+
+      <form id="form-modal-add-leave-type" class="modal-form" autocomplete="off">
+        <div class="form-group">
+          <label for="modal-input-type-name">Leave Type Name <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <span class="input-icon">🏷️</span>
+            <input type="text" id="modal-input-type-name" placeholder="e.g. Casual Leave, Compensatory Off..." required maxlength="30" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="modal-input-type-category">Category / Grouping</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📁</span>
+            <input type="text" id="modal-input-type-category" placeholder="e.g. Personal, Vacation, Medical..." maxlength="30" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Select Emoji / Dashboard Icon</label>
+          <div class="emoji-picker-container">
+            <div class="emoji-presets-grid" id="modal-emoji-presets">
+              <button type="button" class="emoji-chip selected" data-emoji="🏖️">🏖️</button>
+              <button type="button" class="emoji-chip" data-emoji="💻">💻</button>
+              <button type="button" class="emoji-chip" data-emoji="🤒">🤒</button>
+              <button type="button" class="emoji-chip" data-emoji="🌴">🌴</button>
+              <button type="button" class="emoji-chip" data-emoji="🏥">🏥</button>
+              <button type="button" class="emoji-chip" data-emoji="✈️">✈️</button>
+              <button type="button" class="emoji-chip" data-emoji="👶">👶</button>
+              <button type="button" class="emoji-chip" data-emoji="☕">☕</button>
+              <button type="button" class="emoji-chip" data-emoji="🎓">🎓</button>
+              <button type="button" class="emoji-chip" data-emoji="🎉">🎉</button>
+              <button type="button" class="emoji-chip" data-emoji="🚗">🚗</button>
+              <button type="button" class="emoji-chip" data-emoji="🏡">🏡</button>
+              <button type="button" class="emoji-chip" data-emoji="🧘">🧘</button>
+              <button type="button" class="emoji-chip" data-emoji="🩺">🩺</button>
+              <button type="button" class="emoji-chip" data-emoji="⚡">⚡</button>
+              <button type="button" class="emoji-chip" data-emoji="🌟">🌟</button>
+            </div>
+            <div class="custom-emoji-row">
+              <span class="input-hint">Or type custom emoji:</span>
+              <input type="text" id="modal-input-custom-emoji" class="input-custom-emoji" placeholder="✨" maxlength="4">
+              <div class="emoji-preview-box">
+                <span class="preview-label">Selected:</span>
+                <span class="selected-emoji-preview" id="selected-emoji-preview">🏖️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="modal-select-type-color">Highlight Theme Color</label>
+          <div class="color-select-wrapper">
+            <select id="modal-select-type-color" class="modal-select">
+              <option value="red">Light Red (Annual / Vacation)</option>
+              <option value="green">Light Green (Remote / WFH)</option>
+              <option value="yellow">Light Yellow (Medical / Sick)</option>
+              <option value="blue">Light Blue (General Leave)</option>
+              <option value="purple">Light Purple (Special Leave)</option>
+              <option value="orange">Light Orange (Emergency Leave)</option>
+              <option value="teal">Light Teal (Flex / Half Day)</option>
+              <option value="pink">Light Pink (Personal / Family)</option>
+              <option value="indigo">Light Indigo (Comp Off)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="btn-cancel-modal-type">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-modal-type">
+            <span>➕ Save Leave Type</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="toast-container" class="toast-container" aria-live="polite"></div>

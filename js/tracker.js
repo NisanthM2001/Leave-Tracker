@@ -15,20 +15,26 @@ export function initYearCollapseState() {
   });
 }
 
-export function renderLeaveTracker() {
-  populateFilterDropdowns();
-  renderAllYearSections();
-  updateNextYearPrompt();
+export function checkAutoYearProgression() {
+  const isAutoUnlock = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
+  if (!isAutoUnlock) return;
+
+  const currentYear = new Date().getFullYear();
+  if (currentYear >= 2026 && !state.settings.years.includes(currentYear)) {
+    state.settings.years.push(currentYear);
+    state.settings.years.sort((a, b) => a - b);
+    if (!state.entries[currentYear]) {
+      state.entries[currentYear] = [];
+    }
+    saveSettingsToStorage();
+    saveEntriesToStorage();
+  }
 }
 
-function updateNextYearPrompt() {
-  const maxYear = state.settings.years.length > 0 ? Math.max(...state.settings.years) : 2026;
-  const nextYear = maxYear + 1;
-  const btn = document.getElementById('btn-add-next-year-top');
-  if (btn) {
-    btn.innerHTML = `<span>➕ Start Year ${nextYear}</span>`;
-    btn.title = `Add and open Year ${nextYear} for leave recording`;
-  }
+export function renderLeaveTracker() {
+  checkAutoYearProgression();
+  populateFilterDropdowns();
+  renderAllYearSections();
 }
 
 export function populateFilterDropdowns() {
@@ -39,7 +45,7 @@ export function populateFilterDropdowns() {
     state.settings.leaveTypes.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t.name;
-      opt.textContent = t.name;
+      opt.textContent = `${t.icon ? t.icon + ' ' : ''}${t.name}`;
       typeFilter.appendChild(opt);
     });
     if (state.settings.leaveTypes.some(t => t.name === prev) || prev === 'ALL') {
@@ -75,49 +81,9 @@ export function renderAllYearSections() {
     if (selectedYearFilter !== 'ALL' && String(year) !== String(selectedYearFilter)) return;
     container.appendChild(renderYearSection(year));
   });
-
-  // Next Year Banner
-  const maxYear = state.settings.years.length > 0 ? Math.max(...state.settings.years) : 2026;
-  const nextYear = maxYear + 1;
-  const banner = document.createElement('div');
-  banner.className = 'next-year-banner card';
-  banner.innerHTML = `
-    <div class="next-year-content">
-      <div class="next-year-icon">🚀</div>
-      <div class="next-year-text">
-        <h4>Completed Year ${maxYear} or planning ahead?</h4>
-        <p>Instantly unlock <strong>Year ${nextYear}</strong>. No limits — continue tracking as far as you go!</p>
-      </div>
-    </div>
-    <button type="button" class="btn btn-primary" id="btn-banner-add-year">
-      <span>+ Add Year ${nextYear}</span>
-    </button>
-  `;
-  banner.querySelector('#btn-banner-add-year').addEventListener('click', () => addNewYear(nextYear));
-  container.appendChild(banner);
-}
-
-export function addNewYear(targetYear) {
-  const yearToAdd = targetYear || ((state.settings.years.length > 0 ? Math.max(...state.settings.years) : 2026) + 1);
-  if (state.settings.years.includes(yearToAdd)) {
-    showToast(`Year ${yearToAdd} already exists!`, 'error');
-    return;
-  }
-  state.settings.years.push(yearToAdd);
-  state.settings.years.sort((a, b) => a - b);
-  state.entries[yearToAdd] = [];
-  state.collapsedYears[yearToAdd] = false;
-  saveSettingsToStorage();
-  saveEntriesToStorage();
-  renderLeaveTracker();
-  addNewEntryToYear(yearToAdd);
-  showToast(`Year ${yearToAdd} added!`, 'success');
 }
 
 export function setupTrackerToolbarEvents() {
-  const addTop = document.getElementById('btn-add-next-year-top');
-  if (addTop) addTop.addEventListener('click', () => addNewYear());
-
   const search = document.getElementById('filter-search-reason');
   if (search) search.addEventListener('input', (e) => { state.filters.search = e.target.value.trim(); renderAllYearSections(); });
 

@@ -1,15 +1,19 @@
 /**
- * Settings & Configuration (Leave Types & Years)
+ * Settings & Configuration (Leave Types Modal & Auto Year Progression)
  * Personal Leave Tracker
  */
 
 import { state, showToast, saveSettingsToStorage, saveEntriesToStorage } from './state.js';
 import { renderLeaveTracker } from './tracker.js';
+import { renderDashboard } from './dashboard.js';
 import { handleExportPrompt, handleImportFile } from './data-io.js';
+
+let currentSelectedEmoji = '🏖️';
 
 export function renderSettings() {
   renderSettingsLeaveTypes();
   renderSettingsYears();
+  initAutoYearToggleState();
 }
 
 function renderSettingsLeaveTypes() {
@@ -24,11 +28,12 @@ function renderSettingsLeaveTypes() {
     li.className = 'settings-list-item';
     li.innerHTML = `
       <div class="settings-item-label">
+        <span class="settings-item-icon">${t.icon || '📌'}</span>
         <span class="settings-item-dot" style="background-color: var(--leave-${t.color || 'blue'}-border, #4472C4);"></span>
-        <span>${t.name}</span>
-        <span style="font-size: 0.75rem; color: var(--text-muted);">(${t.color})</span>
+        <span class="settings-item-name">${t.name}</span>
+        <span class="settings-item-meta">(${t.category || 'General'})</span>
       </div>
-      <button type="button" class="btn-remove-setting" title="Remove leave type">✕</button>
+      <button type="button" class="btn-remove-setting" title="Remove ${t.name}">✕</button>
     `;
 
     li.querySelector('.btn-remove-setting').addEventListener('click', () => {
@@ -41,6 +46,7 @@ function renderSettingsLeaveTypes() {
         saveSettingsToStorage();
         renderSettings();
         renderLeaveTracker();
+        renderDashboard();
         showToast(`Removed leave type "${t.name}".`, 'info');
       }
     });
@@ -54,49 +60,101 @@ function renderSettingsYears() {
   const countBadge = document.getElementById('years-count');
   if (!chipGrid) return;
   chipGrid.innerHTML = '';
-  countBadge.textContent = `${state.settings.years.length} active years`;
+  countBadge.textContent = `${state.settings.years.length} active year${state.settings.years.length === 1 ? '' : 's'}`;
 
   state.settings.years.slice().sort((a, b) => a - b).forEach(y => {
     const chip = document.createElement('div');
     chip.className = 'year-chip';
     chip.innerHTML = `
+      <span class="year-chip-icon">📅</span>
       <span>${y}</span>
-      <button type="button" title="Remove Year ${y} from tracking">✕</button>
     `;
-
-    // Warning before closing Active Tracking Years
-    chip.querySelector('button').addEventListener('click', () => {
-      const recordsCount = (state.entries[y] || []).length;
-      const warningMsg = `⚠️ Warning: Are you sure you want to remove Year ${y} from Active Tracking?\n\n` +
-        (recordsCount > 0 
-          ? `This year contains ${recordsCount} recorded leave entry(ies) that will be permanently removed.` 
-          : `Year ${y} will be removed from your tracking list.`);
-      
-      if (confirm(warningMsg)) {
-        state.settings.years = state.settings.years.filter(year => year !== y);
-        delete state.entries[y];
-        saveSettingsToStorage();
-        saveEntriesToStorage();
-        renderSettings();
-        renderLeaveTracker();
-        showToast(`Removed Year ${y} from Active Tracking.`, 'info');
-      }
-    });
-
     chipGrid.appendChild(chip);
   });
 }
 
+function initAutoYearToggleState() {
+  const toggle = document.getElementById('toggle-auto-year-unlock');
+  if (toggle) {
+    const isAuto = localStorage.getItem('leave_tracker_auto_year_unlock') !== 'false';
+    toggle.checked = isAuto;
+  }
+}
+
 export function setupSettingsForms() {
-  // Add Leave Type
-  const typeForm = document.getElementById('form-add-leave-type');
-  if (typeForm) {
-    typeForm.addEventListener('submit', (e) => {
+  // 1. Open Add Leave Type Modal
+  const openModalBtn = document.getElementById('btn-open-add-type-modal');
+  const modal = document.getElementById('modal-add-leave-type');
+  const closeModalBtn = document.getElementById('btn-close-modal-type');
+  const cancelModalBtn = document.getElementById('btn-cancel-modal-type');
+
+  function openModal() {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    const nameInp = document.getElementById('modal-input-type-name');
+    if (nameInp) {
+      nameInp.value = '';
+      setTimeout(() => nameInp.focus(), 50);
+    }
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  // 2. Emoji Selection in Modal
+  const presetChips = document.querySelectorAll('#modal-emoji-presets .emoji-chip');
+  const preview = document.getElementById('selected-emoji-preview');
+  const customEmojiInput = document.getElementById('modal-input-custom-emoji');
+
+  presetChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      presetChips.forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      currentSelectedEmoji = chip.getAttribute('data-emoji') || '🏖️';
+      if (preview) preview.textContent = currentSelectedEmoji;
+      if (customEmojiInput) customEmojiInput.value = '';
+    });
+  });
+
+  if (customEmojiInput) {
+    customEmojiInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        presetChips.forEach(c => c.classList.remove('selected'));
+        currentSelectedEmoji = val;
+        if (preview) preview.textContent = currentSelectedEmoji;
+      }
+    });
+  }
+
+  // 3. Modal Form Submit
+  const modalForm = document.getElementById('form-modal-add-leave-type');
+  if (modalForm) {
+    modalForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const nameInput = document.getElementById('input-new-leave-type');
-      const colorSelect = document.getElementById('select-new-leave-color');
+      const nameInput = document.getElementById('modal-input-type-name');
+      const catInput = document.getElementById('modal-input-type-category');
+      const colorSelect = document.getElementById('modal-select-type-color');
+
       const name = nameInput.value.trim();
-      const color = colorSelect.value;
+      const category = (catInput ? catInput.value.trim() : '') || 'Custom';
+      const color = colorSelect ? colorSelect.value : 'blue';
+      const emoji = currentSelectedEmoji || '🏖️';
+
       if (!name) return;
 
       if (state.settings.leaveTypes.some(t => t.name.toLowerCase() === name.toLowerCase())) {
@@ -108,44 +166,38 @@ export function setupSettingsForms() {
         id: name.toLowerCase().replace(/\s+/g, '-'),
         name: name,
         color: color,
-        category: 'Custom'
+        category: category,
+        icon: emoji
       });
+
       saveSettingsToStorage();
-      nameInput.value = '';
+      closeModal();
+      modalForm.reset();
+
       renderSettings();
       renderLeaveTracker();
-      showToast(`Added "${name}" leave type!`, 'success');
+      renderDashboard();
+
+      showToast(`Added "${name}" ${emoji}! Dashboard & tracker updated in real time.`, 'success');
     });
   }
 
-  // Add Year (Unlimited)
-  const yearForm = document.getElementById('form-add-year');
-  if (yearForm) {
-    yearForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const yearInput = document.getElementById('input-new-year');
-      const newYear = parseInt(yearInput.value, 10);
-      if (isNaN(newYear) || newYear < 2000) {
-        showToast('Please enter a valid 4-digit year (2000+).', 'error');
-        return;
+  // 4. Admin Auto-Year Progression Toggle
+  const autoYearToggle = document.getElementById('toggle-auto-year-unlock');
+  if (autoYearToggle) {
+    autoYearToggle.addEventListener('change', (e) => {
+      localStorage.setItem('leave_tracker_auto_year_unlock', e.target.checked);
+      if (e.target.checked) {
+        showToast('Automatic year progression enabled. Upcoming years unlock automatically.', 'success');
+        renderLeaveTracker();
+        renderSettings();
+      } else {
+        showToast('Automatic year progression disabled.', 'info');
       }
-      if (state.settings.years.includes(newYear)) {
-        showToast(`Year ${newYear} already exists!`, 'error');
-        return;
-      }
-      state.settings.years.push(newYear);
-      state.settings.years.sort((a, b) => a - b);
-      state.entries[newYear] = [];
-      saveSettingsToStorage();
-      saveEntriesToStorage();
-      yearInput.value = '';
-      renderSettings();
-      renderLeaveTracker();
-      showToast(`Year ${newYear} added!`, 'success');
     });
   }
 
-  // Export & Import Handlers
+  // 5. Export & Import Handlers
   const exportBtn = document.getElementById('btn-export-data');
   if (exportBtn) exportBtn.addEventListener('click', handleExportPrompt);
 
